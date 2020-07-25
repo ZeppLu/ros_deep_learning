@@ -54,6 +54,8 @@ void info_connect( const ros::SingleSubscriberPublisher& pub )
 // input image subscriber callback
 void img_callback( const sensor_msgs::ImageConstPtr& input )
 {
+	ros::Time time_received = ros::Time::now();
+
 	// convert the image to reside on GPU
 	if( !cvt || !cvt->Convert(input) )
 	{
@@ -114,6 +116,12 @@ void img_callback( const sensor_msgs::ImageConstPtr& input )
 
 		// populate timestamp filed in header
 		msg.header.stamp = ros::Time::now();
+
+		// delay
+		ros::Duration diff = msg.header.stamp - input->header.stamp;
+		ros::Duration diff2 = msg.header.stamp - time_received;
+		ROS_INFO("delay: %u sec, %u nsec", diff.sec, diff.nsec);
+		ROS_INFO("DNN delay: %u sec, %u nsec", diff2.sec, diff2.nsec);
 
 		// publish the detection message
 		detection_pub->publish(msg);
