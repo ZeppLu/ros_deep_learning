@@ -75,14 +75,14 @@ void img_callback( const sensor_msgs::ImageConstPtr& input )
 		return;
 	}
 
+	// create a detection for each bounding box
+	vision_msgs::Detection2DArray msg;
+
 	// if objects were detected, send out message
 	if( numDetections > 0 )
 	{
 		ROS_INFO("detected %i objects in %ux%u image", numDetections, input->width, input->height);
 		
-		// create a detection for each bounding box
-		vision_msgs::Detection2DArray msg;
-
 		for( int n=0; n < numDetections; n++ )
 		{
 			detectNet::Detection* det = detections + n;
@@ -113,19 +113,19 @@ void img_callback( const sensor_msgs::ImageConstPtr& input )
 			detMsg.results.push_back(hyp);
 			msg.detections.push_back(detMsg);
 		}
-
-		// populate timestamp filed in header
-		msg.header.stamp = ros::Time::now();
-
-		// delay
-		ros::Duration diff = msg.header.stamp - input->header.stamp;
-		ros::Duration diff2 = msg.header.stamp - time_received;
-		ROS_INFO("delay: %u sec, %u nsec", diff.sec, diff.nsec);
-		ROS_INFO("DNN delay: %u sec, %u nsec", diff2.sec, diff2.nsec);
-
-		// publish the detection message
-		detection_pub->publish(msg);
 	}
+
+	// populate timestamp filed in header
+	msg.header.stamp = ros::Time::now();
+
+	// delay
+	ros::Duration diff = msg.header.stamp - input->header.stamp;
+	ros::Duration diff2 = msg.header.stamp - time_received;
+	ROS_INFO("delay: %u sec, %u nsec", diff.sec, diff.nsec);
+	ROS_INFO("DNN delay: %u sec, %u nsec", diff2.sec, diff2.nsec);
+
+	// publish the detection message
+	detection_pub->publish(msg);
 }
 
 
