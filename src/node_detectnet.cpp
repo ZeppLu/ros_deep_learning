@@ -116,7 +116,12 @@ void img_callback( const sensor_msgs::ImageConstPtr& input )
 	}
 
 	// populate timestamp filed in header
-	msg.header.stamp = ros::Time::now();
+	ros::Time stamp = ros::Time::now();
+	msg.header.stamp = stamp;
+	for( int n=0; n < numDetections; n++ )
+	{
+		msg.detections[n].header.stamp = stamp;
+	}
 
 	// delay
 	ros::Duration diff = msg.header.stamp - input->header.stamp;
