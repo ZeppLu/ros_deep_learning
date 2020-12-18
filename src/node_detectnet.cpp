@@ -82,20 +82,20 @@ void img_callback( const sensor_msgs::ImageConstPtr& input )
 	if( numDetections > 0 )
 	{
 		ROS_INFO("detected %i objects in %ux%u image", numDetections, input->width, input->height);
-		
+
 		for( int n=0; n < numDetections; n++ )
 		{
 			detectNet::Detection* det = detections + n;
 
 			ROS_INFO("object %i class #%u (%s)  confidence=%f\n", n, det->ClassID, net->GetClassDesc(det->ClassID), det->Confidence);
 			ROS_INFO("object %i bounding box (%f, %f)  (%f, %f)  w=%f  h=%f\n", n, det->Left, det->Top, det->Right, det->Bottom, det->Width(), det->Height());
-			
+
 			// create a detection sub-message
 			vision_msgs::Detection2D detMsg;
 
 			detMsg.bbox.size_x = det->Width();
 			detMsg.bbox.size_y = det->Height();
-			
+
 			float cx, cy;
 			det->Center(&cx, &cy);
 
@@ -106,28 +106,23 @@ void img_callback( const sensor_msgs::ImageConstPtr& input )
 
 			// create classification hypothesis
 			vision_msgs::ObjectHypothesisWithPose hyp;
-			
+
 			hyp.id = det->ClassID;
 			hyp.score = det->Confidence;
 
 			detMsg.results.push_back(hyp);
+			detMsg.header.stamp = input->header.stamp;
 			msg.detections.push_back(detMsg);
 		}
 	}
 
 	// populate timestamp filed in header
-	ros::Time stamp = ros::Time::now();
-	msg.header.stamp = stamp;
-	for( int n=0; n < numDetections; n++ )
-	{
-		msg.detections[n].header.stamp = stamp;
-	}
+	msg.header.stamp = input->header.stamp;
 
 	// delay
-	ros::Duration diff = msg.header.stamp - input->header.stamp;
-	ros::Duration diff2 = msg.header.stamp - time_received;
-	ROS_INFO("delay: %u sec, %u nsec", diff.sec, diff.nsec);
-	ROS_INFO("DNN delay: %u sec, %u nsec", diff2.sec, diff2.nsec);
+	ros::Duration diff1 = ros::Time::now() - input->header.stamp;
+	ros::Duration diff2 = ros::Time::now() - time_received;
+	ROS_INFO("image delay: %fs; DNN delay: %fs", diff1.toSec(), diff2.toSec());
 
 	// publish the detection message
 	detection_pub->publish(msg);
@@ -164,7 +159,7 @@ int main(int argc, char **argv)
 	// set mean pixel and threshold defaults
 	float mean_pixel = 0.0f;
 	float threshold  = 0.5f;
-	
+
 	private_nh.param<float>("mean_pixel_value", mean_pixel, mean_pixel);
 	private_nh.param<float>("threshold", threshold, threshold);
 
@@ -217,7 +212,7 @@ int main(int argc, char **argv)
 	std::hash<std::string> model_hasher;  // hash the model path to avoid collisions on the param server
 	std::string model_hash_str = std::string(net->GetModelPath()) + std::string(net->GetClassPath());
 	const size_t model_hash = model_hasher(model_hash_str);
-	
+
 	ROS_INFO("model hash => %zu", model_hash);
 	ROS_INFO("hash string => %s", model_hash_str.c_str());
 
@@ -231,7 +226,7 @@ int main(int argc, char **argv)
 	// create the key on the param server
 	std::string class_key = std::string("class_labels_") + std::to_string(model_hash);
 	private_nh.setParam(class_key, class_descriptions);
-		
+
 	// populate the vision info msg
 	std::string node_namespace = private_nh.getNamespace();
 	ROS_INFO("node namespace => %s", node_namespace.c_str());
@@ -239,7 +234,7 @@ int main(int argc, char **argv)
 	info_msg.database_location = node_namespace + std::string("/") + class_key;
 	info_msg.database_version  = 0;
 	info_msg.method 		  = net->GetModelPath();
-	
+
 	ROS_INFO("class labels => %s", info_msg.database_location.c_str());
 
 
@@ -247,7 +242,7 @@ int main(int argc, char **argv)
 	 * create an image converter object
 	 */
 	cvt = new imageConverter();
-	
+
 	if( !cvt )
 	{
 		ROS_ERROR("failed to create imageConverter object");
@@ -271,7 +266,7 @@ int main(int argc, char **argv)
 	//image_transport::ImageTransport it(nh);	// BUG - stack smashing on TX2?
 	//image_transport::Subscriber img_sub = it.subscribe("image", 1, img_callback);
 	ros::Subscriber img_sub = private_nh.subscribe("image_in", 5, img_callback);
-	
+
 
 	/*
 	 * wait for messages
