@@ -2,4 +2,8 @@
     <class name="ros_deep_learning/ros_imagenet" type="ros_deep_learning::ros_imagenet" base_class_type="nodelet::Nodelet">
         <description>A node to classify images according to ILSVRC classes</description>
     </class>
+    <!-- `name' used to load the nodelet, while `type' used to indicate C++ class -->
+    <class name="ros_deep_learning/detectnet_node" type="ros_deep_learning::DetectNetNode" base_class_type="nodelet::Nodelet">
+        <description>A node to do object detection</description>
+    </class>
 </library>

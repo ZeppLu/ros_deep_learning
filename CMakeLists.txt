@@ -2,10 +2,13 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(ros_deep_learning)
 
+add_compile_options(-std=c++11)
+
 # locate dependencies
 find_package(catkin REQUIRED COMPONENTS
   image_transport
   roscpp
+  nodelet
   sensor_msgs
   vision_msgs
   std_msgs
@@ -33,10 +36,6 @@ include_directories(
   ${CUDA_INCLUDE_DIRS}
 )
 
-# enable c++11 (TensorRT requirement)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-
-
 # inference nodes
 add_executable(imagenet src/node_imagenet.cpp src/image_converter.cpp)
 target_link_libraries(imagenet ${catkin_LIBRARIES} jetson-inference)
@@ -49,11 +48,10 @@ target_link_libraries(segnet ${catkin_LIBRARIES} jetson-inference)
 
 
 # the library we are going to compile (has all of the nodelets in it)
-add_library(ros_deep_learning_nodelets src/nodelet_imagenet.cpp src/image_converter.cpp)
+add_library(ros_deep_learning_nodelets src/nodelet_imagenet.cpp src/nodelet_detectnet.cpp src/image_converter.cpp)
 target_link_libraries(ros_deep_learning_nodelets ${catkin_LIBRARIES} jetson-inference)
 
 
 #if(catkin_EXPORTED_LIBRARIES)
 #    add_dependencies(ros_deep_learning_nodelets ${catkin_EXPORTED_LIBRARIES})
 #endif()
-
