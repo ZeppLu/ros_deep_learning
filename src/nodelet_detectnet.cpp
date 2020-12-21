@@ -93,7 +93,7 @@ void DetectNetNode::img_callback(const sensor_msgs::ImageConstPtr& input)
 
 	// create a detection for each bounding box
 	// TODO: change to pointer
-	vision_msgs::Detection2DArray msg;
+	vision_msgs::Detection2DArrayPtr msg(new vision_msgs::Detection2DArray());
 
 	// if objects were detected, send out message
 	if( numDetections > 0 )
@@ -130,13 +130,13 @@ void DetectNetNode::img_callback(const sensor_msgs::ImageConstPtr& input)
 			detMsg.results.push_back(hyp);
 			if (hyp.id == 1) {  // person
 			detMsg.header.stamp = input->header.stamp;
-			msg.detections.push_back(detMsg);
+			msg->detections.push_back(detMsg);
 			}
 		}
 	}
 
 	// populate timestamp filed in header
-	msg.header.stamp = input->header.stamp;
+	msg->header.stamp = input->header.stamp;
 
 	// delay
 	ros::Duration diff1 = time_received - input->header.stamp;
